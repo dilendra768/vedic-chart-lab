@@ -80,6 +80,10 @@ pytest -q
 5. Add Docker, GitHub Actions CI and typed request validation.
 6. Add location lookup only with a trusted geocoding provider and explicit user consent.
 
+## Suggested GitHub repository description
+
+`A Python + Flask Vedic astrology calculation workbench using Swiss Ephemeris: sidereal planetary positions, ayanamsa options and Parashari divisional charts.`
+
 ## License
 
 MIT. Swiss Ephemeris is distributed under its own licensing terms. Review the Swiss Ephemeris license and choose the appropriate license (AGPL or a professional license) before distributing a product that depends on it. This repository's MIT license does not override dependency licenses.

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Vedic Chart Lab calculates sidereal planetary placements and divisional charts for learning.">
+  <title>Vedic Chart Lab · Jyotish calculations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="topbar"><a class="brand" href="/">✦ Vedic Chart Lab</a><span class="top-tag">SIDEREAL · PARASHARI VARGAS</span></header>
+<main>
+  <section class="intro">
+    <div class="eyebrow">ASTROLOGY CALCULATION WORKBENCH</div>
+    <h1>Explore the sky.<br><em>Understand the framework.</em></h1>
+    <p>Calculate sidereal planetary positions and divisional charts with transparent settings. Built for learning, experimentation and portfolio demonstration.</p>
+  </section>
+  <section class="workspace">
+    <aside class="form-card">
+      <div class="section-title"><span>01 / INPUT</span><h2>Birth details</h2></div>
+      <form method="post" action="/calculate">
+        <label for="name">Chart label <small>optional</small></label>
+        <input id="name" name="name" maxlength="60" placeholder="e.g. Sample chart" value="{{ form.name if form else '' }}">
+        <label for="birth_datetime">Local birth date and time</label>
+        <input id="birth_datetime" name="birth_datetime" type="datetime-local" required value="{{ form.birth_datetime if form else '' }}">
+        <label for="timezone">IANA time zone</label>
+        <input id="timezone" name="timezone" required value="{{ form.timezone if form else 'Asia/Kathmandu' }}" placeholder="Asia/Kathmandu">
+        <p class="hint">Examples: Asia/Kathmandu · Asia/Tokyo · Europe/London</p>
+        <div class="two-fields">
+          <div><label for="latitude">Latitude</label><input id="latitude" name="latitude" type="number" min="-90" max="90" step="any" required placeholder="27.7172" value="{{ form.latitude if form else '' }}"></div>
+          <div><label for="longitude">Longitude</label><input id="longitude" name="longitude" type="number" min="-180" max="180" step="any" required placeholder="85.3240" value="{{ form.longitude if form else '' }}"></div>
+        </div>
+        <label for="ayanamsa">Ayanamsa</label>
+        <select id="ayanamsa" name="ayanamsa">
+          {% for key, label in [('lahiri','Lahiri / Chitrapaksha'),('raman','B.V. Raman'),('krishnamurti','Krishnamurti') ] %}
+          <option value="{{ key }}" {% if form and form.ayanamsa == key %}selected{% elif not form and key == 'lahiri' %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <label for="house_system">House system</label>
+        <select id="house_system" name="house_system">
+          {% for key, label in [('W','Whole Sign (W)'),('E','Equal (E)'),('P','Placidus (P)'),('K','Koch (K)')] %}
+          <option value="{{ key }}" {% if form and form.house_system == key %}selected{% elif not form and key == 'W' %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <label for="varga">Divisional chart</label>
+        <select id="varga" name="varga">
+          {% for number, label in vargas.items() %}
+          <option value="{{ number }}" {% if form and form.varga|int == number %}selected{% elif not form and number == 1 %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <button class="primary" type="submit">Calculate chart <span>↗</span></button>
+      </form>
+      {% if error %}<div class="error" role="alert">{{ error }}</div>{% endif %}
+      <div class="privacy">🔒 Calculations run on your own machine. This demo does not send birth details to a third-party API.</div>
+    </aside>
+    <section class="results">
+      {% if result %}
+      <div class="result-head">
+        <div><div class="eyebrow">02 / CALCULATION RESULT</div><h2>{{ result.name }}</h2><p>{{ result.birth_local }} · {{ result.timezone }} · {{ result.coordinates }}</p></div>
+        <div class="varga-chip">{{ result.division_name }}</div>
+      </div>
+      <div class="summary-grid">
+        <div class="summary"><span>SIDEREAL ASCENDANT</span><strong>{{ result.ascendant.glyph }} {{ result.ascendant.sign }}</strong><small>{{ result.ascendant.degree_text }}</small></div>
+        <div class="summary"><span>SIDEREAL MIDHEAVEN</span><strong>{{ result.mc.glyph }} {{ result.mc.sign }}</strong><small>{{ result.mc.degree_text }}</small></div>
+        <div class="summary"><span>AYANAMSA</span><strong>{{ result.ayanamsa }}</strong><small>{{ result.utc_datetime }}</small></div>
+      </div>
+      <div class="table-card">
+        <div class="table-title"><div><div class="eyebrow">PLANETARY LONGITUDES</div><h3>Graha positions</h3></div><span>Node: True Rahu</span></div>
+        <div class="table-scroll"><table><thead><tr><th>Graha</th><th>Rashi</th><th>Degree in sign</th><th>House</th><th>Motion</th></tr></thead><tbody>
+          {% for p in result.planets %}
+          <tr><td><strong>{{ p.name }}</strong></td><td><span class="sign-glyph">{{ p.glyph }}</span>{{ p.sign }}</td><td>{{ p.degree }}</td><td>{% if p.house %}{{ p.house }}{% else %}—{% endif %}</td><td>{% if p.retrograde %}<span class="retro">℞ Retrograde</span>{% else %}<span class="direct">Direct</span>{% endif %}</td></tr>
+          {% endfor %}
+        </tbody></table></div>
+      </div>
+      <div class="note"><strong>Calculation notes</strong><p>UTC used: {{ result.utc_datetime }}. Planetary positions use Swiss Ephemeris with {{ result.ayanamsa }} sidereal mode. Ketu is calculated opposite Rahu. Varga sign placements use the mappings documented in the repository README. Some traditions and software packages use different varga conventions.</p><p>{{ result.disclaimer }}</p></div>
+      {% else %}
+      <div class="empty-results"><div class="star-wheel">☸</div><div class="eyebrow">YOUR CHART WILL APPEAR HERE</div><h2>Start with accurate birth data.</h2><p>Enter the local birth time, IANA time zone and coordinates. The selected varga will be calculated using the stated sidereal settings.</p><div class="empty-points"><span>✦ Sidereal positions</span><span>✦ Divisional charts</span><span>✦ Transparent settings</span></div></div>
+      {% endif %}
+    </section>
+  </section>
+  <section class="method"><div><div class="eyebrow">BUILT FOR TRANSPARENCY</div><h2>Astrology software should show its assumptions.</h2></div><p>This project is a calculation-learning tool, not an authority on interpretation. Birth-time accuracy, time-zone history, coordinates, ayanamsa and varga conventions can materially change a chart. Verify important results against a trusted ephemeris and a practitioner familiar with your tradition.</p></section>
+</main>
+<footer><span>VEDIC CHART LAB · OPEN SOURCE LEARNING PROJECT</span><span>Python · Flask · Swiss Ephemeris</span></footer>
+</body>
+</html>
